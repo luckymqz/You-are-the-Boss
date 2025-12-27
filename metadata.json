@@ -1,0 +1,5 @@
+{
+  "name": "Copy of AI Multi-Agent Company Simulator",
+  "description": "A simulator that showcases multiple AI agents collaborating on a project idea, including meetings, conflicts, voting, and generating final artifacts like PRDs, technical specs, and more.",
+  "requestFramePermissions": []
+}

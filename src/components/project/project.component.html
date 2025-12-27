@@ -1,0 +1,125 @@
+
+@if (isLoading()) {
+  <div class="flex items-center justify-center h-screen"><p>Loading Project...</p></div>
+} @else if (error()) {
+  <div class="flex items-center justify-center h-screen"><p class="text-red-500">{{ error() }}</p></div>
+} @else if (project(); as proj) {
+  <div class="flex flex-col h-screen bg-gray-900 text-gray-200 font-sans">
+    <!-- Header -->
+    <header class="flex items-center justify-between p-3 border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <a routerLink="/" class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-500 hover:opacity-80 transition">
+        &larr; AI Simulator
+      </a>
+      <div class="flex-1 px-6 text-center">
+        <h1 class="text-xl font-semibold truncate" [title]="proj.idea">{{ proj.idea }}</h1>
+      </div>
+      <button 
+        (click)="startRun()" 
+        [disabled]="!canRun()"
+        class="px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center">
+        @if (currentRun()?.status === 'running') {
+            <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Running...
+        } @else {
+            <span class="mr-2">▶️</span> Run Simulation
+        }
+      </button>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Left Panel: Agents -->
+      <aside class="w-64 border-r border-gray-800 p-4 overflow-y-auto">
+        <h2 class="text-lg font-bold mb-4">Agents</h2>
+        <div class="space-y-3">
+          @for (agent of agents(); track agent.role) {
+            <div class="flex items-center justify-between p-2 rounded-md bg-gray-800">
+              <div class="flex items-center">
+                <span class="text-2xl mr-3">{{ agent.avatar }}</span>
+                <div>
+                  <p class="font-semibold" [class]="agent.color">{{ agent.role }}</p>
+                  <p class="text-xs text-gray-400">{{ agent.name }}</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" [checked]="agent.enabled" (change)="toggleAgent(agent.role)" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+          }
+        </div>
+      </aside>
+
+      <!-- Center Panel: Timeline -->
+      <main class="flex-1 flex flex-col p-4 overflow-y-auto">
+        <div class="flex-1 space-y-4">
+          @for (message of messages(); track message.id; let i = $index) {
+            @if (getAgent(message.agentRole); as agent) {
+              <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-700 text-lg flex-shrink-0 mt-1">
+                  {{ agent.avatar }}
+                </div>
+                <div class="flex-1 bg-gray-800 rounded-lg p-3">
+                  <div class="flex items-baseline justify-between mb-1">
+                    <p class="font-bold" [class]="agent.color || 'text-gray-200'">{{ agent.name }}</p>
+                    <p class="text-xs text-gray-500">{{ message.timestamp | date:'shortTime' }}</p>
+                  </div>
+                  <div class="prose prose-sm prose-invert max-w-none">
+                     <pre class="bg-transparent p-0 font-sans whitespace-pre-wrap">{{ message.content }}</pre>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+           @if (messages().length === 0 && currentRun()?.status !== 'running') {
+            <div class="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                <p class="text-lg">Simulation not started</p>
+                <p>Click "Run Simulation" to begin.</p>
+            </div>
+          }
+        </div>
+      </main>
+
+      <!-- Right Panel: Artifacts -->
+      <aside class="w-96 border-l border-gray-800 flex flex-col">
+        <div class="p-4 border-b border-gray-800">
+          <h2 class="text-lg font-bold">Artifacts</h2>
+        </div>
+        <div class="flex border-b border-gray-800">
+           @for (type of artifactTypes; track type) {
+            <button 
+              (click)="activeTab.set(type)"
+              class="flex-1 p-3 text-sm font-semibold transition-colors"
+              [class.bg-gray-800]="activeTab() === type"
+              [class.text-indigo-400]="activeTab() === type"
+              [class.text-gray-400]="activeTab() !== type"
+              [class.hover:bg-gray-700]="activeTab() !== type">
+              {{ type }}
+            </button>
+           }
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">
+            @if (getArtifact(activeTab()); as artifact) {
+                <div class="relative">
+                  <div class="absolute top-2 right-2 flex gap-2">
+                     <button (click)="copyContent(artifact.content)" class="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded">Copy</button>
+                     <button (click)="downloadContent(activeTab() + '.md', artifact.content)" class="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded">Download</button>
+                  </div>
+                   <h3 class="text-lg font-bold mb-2 text-indigo-400">{{ activeTab() }}</h3>
+                   <div class="prose prose-sm prose-invert max-w-none bg-gray-800 p-3 rounded-md">
+                     <pre class="bg-transparent p-0 font-sans whitespace-pre-wrap">{{ artifact.content }}</pre>
+                   </div>
+                </div>
+            } @else {
+                 <div class="text-center text-gray-500 pt-10">
+                    <p>Artifact not generated yet.</p>
+                 </div>
+            }
+        </div>
+      </aside>
+    </div>
+  </div>
+}

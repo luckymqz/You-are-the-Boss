@@ -1,0 +1,59 @@
+
+<div class="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-8 bg-gray-900 text-gray-100">
+  <div class="w-full max-w-4xl text-center">
+    <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-500">
+      AI Multi-Agent Simulator
+    </h1>
+    <p class="text-lg sm:text-xl text-gray-400 mb-8">
+      Turn your next big idea into a detailed plan. Let a virtual team of AI agents collaborate, debate, and build it out for you.
+    </p>
+
+    <div class="relative w-full max-w-2xl mx-auto mb-12">
+      <input 
+        type="text"
+        [value]="idea()"
+        (input)="onIdeaInput($event)"
+        (keyup.enter)="startSimulation()"
+        placeholder="e.g., 'An AI-powered SaaS for customer support'"
+        class="w-full px-5 py-4 pr-32 bg-gray-800 border border-gray-700 rounded-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow text-lg"
+      />
+      <button 
+        (click)="startSimulation()" 
+        [disabled]="isLoading() || !idea().trim()"
+        class="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2.5 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center">
+        @if (isLoading()) {
+          <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Processing...
+        } @else {
+          Simulate
+        }
+      </button>
+    </div>
+
+    <div class="w-full max-w-4xl mx-auto">
+      <h2 class="text-2xl font-bold mb-4 text-left">Previous Simulations</h2>
+      @if (projectsLoading()) {
+        <div class="text-center p-8 text-gray-400">Loading projects...</div>
+      } @else {
+        @if (projects().length > 0) {
+          <div class="space-y-3">
+            @for (project of projects(); track project.id) {
+              <a [routerLink]="['/projects', project.id]" class="block p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer text-left">
+                <p class="font-semibold text-lg text-indigo-400">{{ project.idea }}</p>
+                <p class="text-sm text-gray-400">{{ project.createdAt | date:'medium' }}</p>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="text-center p-8 border-2 border-dashed border-gray-700 rounded-lg">
+            <p class="text-gray-400">You haven't run any simulations yet.</p>
+            <p class="text-gray-500">Enter an idea above to get started!</p>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
